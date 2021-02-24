@@ -101,10 +101,10 @@ f_score_well_general = function(data.arg, item.arg, fct.arg, hash.arg = h){
   #### Model setting
   item = item.arg
   fct = fct.arg
-  if( typeof(fct) != 'character'){
-    break
+  if( typeof(fct) == 'character'){
+    print("good: factor is character")
   }else{
-    print(" good: factor is character")
+    stop ("error: factor needs to be character")
   }
   
   h = hash.arg
