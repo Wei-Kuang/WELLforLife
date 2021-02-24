@@ -72,7 +72,7 @@ values(h, item_name) %>% as.integer()
 #### Function Development ####
 ##############################
 
-f_score_well_us_general = function(data.arg, item.arg, fct.arg, hash.arg = h){
+f_score_well_general = function(data.arg, item.arg, fct.arg, hash.arg = h){
   
   #### Note for debugging ####
   # Assign your dataset with id and item to "DF" 
