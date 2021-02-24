@@ -101,6 +101,11 @@ f_score_well_general = function(data.arg, item.arg, fct.arg, hash.arg = h){
   #### Model setting
   item = item.arg
   fct = fct.arg
+  if( typeof(fct) != 'character'){
+    break
+  }else{
+    print(" good: factor is character")
+  }
   
   h = hash.arg
   k_response = values(h, keys = item) # Use [item name -> k resp] 
@@ -121,8 +126,8 @@ f_score_well_general = function(data.arg, item.arg, fct.arg, hash.arg = h){
   # For example, a item with 1-5 responses, its '1' gets 0 score, '2' gets 20 score, ... , and '5' gets 100 score.
   df_recoded_item = data.frame(id = df$id) # Place holder
   
-  for (i in 1:nrow(DF_setting) ){
-    item_i = DF_setting$Item[i] # item_i is one of the 19 items
+  for (i in 1:nrow(DF_setting) ){  # i is the index for item
+    item_i = DF_setting$Item[i]    # item_i is one of the 19 items
     item_i_raw_resp = df[[item_i]] # df provides the raw responses for each item 
     k = DF_setting$K_response[i]
     df_recoded_item[[item_i]]  = (item_i_raw_resp-1) * (  100/ (k-1)  ) # 100 is the max score to be assigned to the highest responses
