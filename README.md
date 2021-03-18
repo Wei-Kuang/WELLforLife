@@ -25,7 +25,8 @@ f_score_well_general(data.arg = DF,
                      fct.arg  = used_fct)
 
 
-#### WELL US score ####
+#### WELL US score
+
 ```R
 library('devtools')
 source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/0923.function_well_score_US_model7_version2.R")
@@ -36,7 +37,8 @@ f_score_US_model_7_v2(data.arg= DF)
 ```
 
 
-#### WELL China score ####
+#### WELL China score
+
 ```R
 library('devtools')
 source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/2020.1012.function_well_score_China_model7.3_version2.R")
