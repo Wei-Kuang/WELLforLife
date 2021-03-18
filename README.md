@@ -2,7 +2,9 @@
 This is  the repo for WELL for Life.
 
 
-# WELL score
+
+
+## WELL score
 #### This is a general well score calculation
 ```
 library('devtools')
