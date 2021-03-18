@@ -23,6 +23,8 @@ used_item_name = values(h_item_IDtoName, keys = used_item_id ) # convert item.id
 f_score_well_general(data.arg = DF, 
                      item.arg = used_item_name , 
                      fct.arg  = used_fct)
+```
+
 
 
 #### WELL US score
@@ -35,6 +37,8 @@ f_score_US_model_7_v2(data.arg= DF)
 
 # Please check the dictionary (tab-dicty) at https://github.com/Wei-Kuang/WELLforLife/blob/main/CFA_US_Model%207.%2009-23-20.JL.xlsx
 ```
+
+
 
 
 #### WELL China score
