@@ -41,7 +41,9 @@ f_score_China_model_7.3_v2(data.arg= DF)
 
 # Recoding
 
-#### Recode WELL US
+#### Jerry  Recode WELL US
 US_W0_GlobalRecoding_2020_0104.Rmd
 
-#### Recode WELL China
+#### Jerry Recode WELL China
+
+#### Jerry Recode WELL Taiwan
