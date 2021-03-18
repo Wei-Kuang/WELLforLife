@@ -27,12 +27,12 @@ f_score_well_general(data.arg = DF,
 f_score_US_model_7_v2(data.arg= DF)
 
 # Please check the dictionary (tab-dicty) at https://github.com/Wei-Kuang/WELLforLife/blob/main/CFA_US_Model%207.%2009-23-20.JL.xlsx
-
 ```
 
 
 #### WELL China score ####
 ```
 f_score_China_model_7.3_v2(data.arg= DF)
+
 # please check the dictionary(tab-dicty) at https://github.com/Wei-Kuang/WELLforLife/blob/main/CFA_China_Model%207.3_10-12-20.JL.xlsx
 ```
