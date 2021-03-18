@@ -39,7 +39,7 @@ f_score_US_model_7_v2(data.arg= DF)
 #### WELL China score ####
 ```R
 library('devtools')
-source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/2020.1012.function_well_score_China_model7.3_version2.R?token=AIMUTNPP5GIMXWQKCJK7GALAKPQWE")
+source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/2020.1012.function_well_score_China_model7.3_version2.R?token=AIMUTNM27XKTI3RFTH7ZH4LAKPRNY")
 
 f_score_China_model_7.3_v2(data.arg= DF)
 
