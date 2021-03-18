@@ -1,0 +1,282 @@
+---
+title: "Untitled"
+author: "Jerry"
+date: "December 8, 2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library('xlsx')
+library("readxl")
+library('tidyverse')
+library('lazyeval')
+library('grid')
+```
+
+
+#### Recoding ####
+```{r data loading}
+setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Data/Data_Taiwan/")
+list.files()
+DF_TW = read.csv('WELLTaiwan_data_score.csv',stringsAsFactors = FALSE)
+dim(DF_TW)
+str(DF_TW)
+```
+
+
+#### Recoding ####
+```{r age}
+df = DF_TW
+# date of birth (dob)
+dob = paste0(df$core_birthday_y,'-',df$core_birthday_m,'-', df$core_birthday_d) %>% as.Date(format = '%Y-%m-%d')
+# date of survey (dos)
+dos = paste0(df$well_q_2_start_ts_y,'-',df$well_q_2_start_ts_m,'-', df$well_q_2_start_ts_d) %>% as.Date(format = '%Y-%m-%d')
+# diff_day
+diff_day = difftime(
+    time1 = as.Date(dos, format = '%Y-%m-%d'),
+    time2 = as.Date(dob, format = '%Y-%m-%d'),
+    units = 'days') %>% as.numeric()
+# Convert diff_day into years (this is the age at survey time)
+age =  round(( diff_day / 365),0)
+# check
+hist(age)
+summary(age)
+
+# assign
+DF_TW[['age_new']] = age
+
+#### age: 5 cat ####
+X = cut(age, breaks =     c(0, 40, 50, 60, 65, 100 ), right = F)
+X %>% table()
+X_fct = factor(X, labels = c('<40','40-49','50-59','60-64', '65+'))
+X_fct %>% table()
+DF_TW[['age_new_5cat']] = X_fct
+
+
+#### age 4 cat
+X = cut(age, breaks =     c(0, 40, 50, 65, 100 ), right = F)
+X %>% table(useNA = 'always')
+X_fct = factor(X, labels = c('<40','40-49','50-64','65+'))
+X_fct %>% table()
+DF_TW[['age_new_4cat']] = X_fct
+
+
+#### age 5 cat
+X = cut(age, breaks =     c(0, 35,  40, 50, 65, 100 ), right = F)
+X %>% table(useNA = 'always')
+X_fct = factor(X, labels = c('<30', '35-39','40-49','50-64','65+'))
+X_fct %>% table()
+DF_TW[['age_new_4cat35']] = X_fct
+
+
+```
+
+```{r gender}
+my_var= 'core_gender'
+DF_TW[[my_var]] %>% table(useNA = 'always')
+
+X= rep(NA, nrow(DF_TW))
+Y= DF_TW[[my_var]]
+
+X[Y %in% c(4)] <- 'Female'
+X[Y %in% c(5)] <- 'Male'
+
+
+X_fct = factor(X,levels = c('Male','Female'))
+X_fct = fct_explicit_na(X_fct,na_level = 'Missing')
+X_fct %>% table(useNA = 'always')
+
+DF_TW[['gender_new']] = X_fct
+```
+
+```{r edu -1 }
+# 1, No formal education, illiterate | 2, self-study, literate | 3, Elementary School | 4, Junior High School | 5, Senior High School | 6, College/University | 7, Master's Degree | 8, Doctoral Degree
+DF_TW$core_education_us_level %>% table(useNA = 'always')
+DF_TW$core_education_years %>% hist()
+
+my_var= 'core_education_us_level'
+X= rep(NA, nrow(DF_TW))
+Y= DF_TW[[my_var]]
+
+X[Y %in% c(1,2)] <-  NA # 'Other'
+X[Y %in% c(3,4)] <- '1. Junior High School and below'
+X[Y %in% c(5)]   <- '2. Senior High School'
+X[Y %in% c(6)]   <- '3. College/University'
+X[Y %in% c(7,8)] <- '4. Postgraduate'
+
+X_fct = factor(X)
+# X_fct = fct_explicit_na(X_fct,na_level = 'Missing')
+X_fct %>% table(useNA = 'always')
+
+DF_TW[['edu_new_4cat']] = X_fct
+```
+
+```{r edu - simple label }
+# 1, No formal education, illiterate | 2, self-study, literate | 3, Elementary School | 4, Junior High School | 5, Senior High School | 6, College/University | 7, Master's Degree | 8, Doctoral Degree
+DF_TW$core_education_us_level %>% table(useNA = 'always')
+DF_TW$core_education_years %>% hist()
+
+my_var= 'core_education_us_level'
+X= rep(NA, nrow(DF_TW))
+Y= DF_TW[[my_var]]
+
+X[Y %in% c(1,2)] <-  NA # 'Other'
+X[Y %in% c(3,4)] <- '1' #  Junior High School and below'
+X[Y %in% c(5)]   <- '2' # Senior High School'
+X[Y %in% c(6)]   <- '3' # College/University'
+X[Y %in% c(7,8)] <- '4' # Postgraduate'
+
+X_fct = factor(X)
+X_fct %>% table(useNA = 'always')
+
+DF_TW[['edu_new_4cat_simplelabel']] = X_fct
+```
+
+```{r Physical activity}
+#3, Positively influenced my well-being | 2,Negatively influenced my well-being | 1, Did not influence my well-being
+# DF_TW$core_physical_activity %>% table()
+# DF_TW$core_physical_activity_inf %>% table()
+
+
+
+#### lpaq_0 (Standford activity) #### 
+DF_TW$core_lpaq   %>% table(useNA='always') # weird data - two similar names
+DF_TW$core_lpaq_0 %>% table(useNA='always') # weird data - two similar names
+DF_TW %>% dplyr::select(core_lpaq, core_lpaq_0) %>% table(useNA='always')
+
+# my_var= 'core_lpaq_0'
+# DF_TW[[my_var]]%>% table(useNA='always')
+# 
+# X= rep(NA, nrow(DF_TW))
+# Y = DF_TW[[my_var]]
+# X[Y %in% c(1)]    = '1. No more than twice a month'
+# X[Y %in% c(2)]    = '2. Light activities twice a week'
+# X[Y %in% c(3)]    = '3. Moderate activities 3 times a week'
+# X[Y %in% c(4)]    = '4. Moderate activities on a daily basis'
+# X[Y %in% c(5,6)]  = '5-6. Vigorous activities more than 3 times a week'
+# 
+# X_fct = factor(X)
+# X_fct %>% table()
+# DF_TW[['core_lpaq_0_new']] = X_fct
+
+
+
+#### nature #### 
+my_var= 'core_nature_min'
+DF_TW[[my_var]]%>% table(useNA='always')
+
+X= rep(NA, nrow(DF_TW))
+Y = DF_TW[[my_var]]
+
+X[Y %in% c(1,2)] = '1. Never and Almost never'
+X[Y %in% c(3)] =  '2. Sometimes'
+X[Y %in% c(4)] =  '3. Fairly often'
+X[Y %in% c(5)] =  '4. Very often'
+
+X_fct = factor(X)
+X_fct %>% table()
+DF_TW[['core_nature_min_new']] = X_fct
+```
+
+```{r Depression}
+# variable name of depression: core_depression
+# dictionary: ...depression?	1, Yes  | 0, No | 2, Don't know 
+
+
+my_var= 'core_depression'
+DF_TW[[my_var]]%>% table(useNA='always')
+
+X= rep(NA, nrow(DF_TW))
+Y = DF_TW[[my_var]]
+
+X[Y %in% c(1)] = '1. Yes'
+X[Y %in% c(0)] =  '0. No'
+X[Y %in% c(2)] =  NA
+X_fct =factor(X)
+DF_TW[['core_depression_new']] = X_fct
+```
+
+```{r Depression and Other Mental}
+# TW questionnaire has mental-health questions, but they do not exist in the dictionary and dataset. 
+# We can revisit this after 1/27. 
+```
+
+
+##########################################
+#### rename the original domain score ####
+##########################################
+```{r Taiwan}
+# rename the domain score
+DF_TW$well_score_social      =  DF_TW$dom_sc_score
+
+
+DF_TW$well_score_emotion     =  DF_TW$dom_ee_score_revised
+DF_TW$well_score_emotion_neg =  DF_TW$dom_ee_neg_score
+DF_TW$well_score_emotion_pos =  DF_TW$dom_ee_pos_score
+
+DF_TW$well_score_stress      =  DF_TW$dom_sr_score_revised
+DF_TW$well_score_stress_neg  =  DF_TW$dom_stress_score
+DF_TW$well_score_stress_pos  =  DF_TW$dom_resil_score
+
+DF_TW$well_score_purpose     =  DF_TW$dom_pm_score
+DF_TW$well_score_senseself   =  DF_TW$dom_ss_score
+DF_TW$well_score_religion    =  DF_TW$dom_re_score
+
+DF_TW$well_score_creativity  = DF_TW$dom_en_score
+DF_TW$well_score_health      = DF_TW$dom_ph_score
+DF_TW$well_score_financial   = DF_TW$dom_fs_score
+
+DF_TW$well_score_9dom        = DF_TW$long_score - DF_TW$dom_ls_score
+
+
+# final check
+my_select = c('well_score_social', 'well_score_emotion','well_score_stress', 'well_score_purpose', 'well_score_senseself', 'well_score_religion',
+              'well_score_creativity','well_score_health', 'well_score_financial','well_score_9dom')
+DF_TW %>% dplyr::select(my_select) %>% summary()
+```
+
+#######################
+#### NEW CFA score ####
+#######################
+
+```{r}
+# go to the function folder to pre-run R code
+# C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/David_FactorAnalysis/Code/3_TW_CFA/WELL_score_function/version_2020.0108.Rmd
+df = f_score_TW_model(data.arg = DF_TW)
+summary(df)
+
+# Merge
+DF_TW = left_join(x= DF_TW, y= df, by='id')
+```
+
+
+```{r missing $ for 53 items}
+setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/David_FactorAnalysis/Data/")
+itemlist = read.xlsx('Theory_Domain_2020_0609.xlsx',sheetIndex = 1)
+
+filtered_item = itemlist$Item [! itemlist$Item %in%'core_health_selfreported'] 
+
+dim(df)
+df = DF_TW %>% dplyr::select(filtered_item) 
+df %>% filter(complete.cases(.)) %>% dim()
+
+```
+
+
+################
+#### output ####
+################
+```{r telomere project }
+# setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/Telomere_length/Data/Taiwan/")
+# DF_TW %>% saveRDS('dat_well_Taiwan_recoded.rds')
+```
+
+```{r CFA presentation on Jan 2021}
+setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/WELL_Score/Data/")
+DF_TW %>% saveRDS('dat_well_Taiwan_recoded_2021_0122.rds')
+```
+
+ 

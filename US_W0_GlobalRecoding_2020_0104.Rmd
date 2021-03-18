@@ -1,0 +1,868 @@
+---
+title: "US_WS_Recoding"
+author: "Jerry"
+date: "September 24, 2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library('xlsx')
+library("readxl")
+library('tidyverse')
+library('scales')
+library('lazyeval')
+```
+
+
+#########################
+#### US Data loading ####
+#########################
+```{r 1. Dataset}
+#### US dataset ####
+dataset_name = 'dat_well0_2020_1215.csv'
+setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Data/Data_US/")
+DF_US = read.csv(dataset_name, stringsAsFactors = FALSE)
+dim(DF_US)
+names(DF_US) # Old well score is already here!
+```
+
+
+
+
+##################
+#### Recoding ####
+##################
+```{r Site}
+DF_US$Site = 'US'
+DF_US$Site  = factor(DF_US$Site)
+```
+
+```{r Covariates -  Demographic Variable}
+
+#### Age-1####
+X = DF_US$portal_age %>% cut( breaks= c(18, 30, 50, 60, 70, 120),right = F) %>% unlist() %>% as.vector()
+X %>% table(useNA='always')
+X = tidyr::replace_na(X, 'Missing')
+X_fct = factor(X, labels = c('18-29','30-49','50-59','60-69','70+'))
+X_fct %>% table(useNA = 'always')
+DF_US$age_new_1 = X_fct
+
+#### Age-2 ####
+X = DF_US$portal_age %>% cut( breaks= c(0, 50, 60, 70, 80, 120),right = F) %>% unlist() %>% as.vector()
+X %>% table(useNA='always')
+X = tidyr::replace_na(X, 'Missing')
+X_fct = factor(X, labels = c('<50','50-59','60-69','70-79','80+'))
+X_fct %>% table(useNA = 'always')
+DF_US$age_new_2 = X_fct
+
+
+#### Gender/Sex-1 ####
+my_var = 'core_gender'
+table(DF_US[[my_var]], useNA = 'always')
+Y = DF_US[[my_var]]
+X = DF_US[[my_var]]
+X[Y==5] <- '1, Male'
+X[Y==4] <- '2, Female'
+X[Y %in% c(1,2,3,6)] <- NA  #'3, Other'  -> NA
+X = tidyr::replace_na(X, 'Missing')
+X_fct = factor(X); X_fct %>% table(useNA = 'always')
+DF_US$gender_new = X_fct
+
+
+#### Gender/Sex-2 ####
+my_var = 'core_gender'
+table(DF_US[[my_var]], useNA = 'always')
+Y = DF_US[[my_var]]
+X = DF_US[[my_var]]
+X[Y==5] <- '1, Male'
+X[Y==4] <- '2, Female'
+X[Y %in% c(1,2,3,6)] <- '3, Other'  
+X = tidyr::replace_na(X, 'Missing')
+X_fct = factor(X); X_fct %>% table(useNA = 'always')
+DF_US$gender_new_MFO = X_fct
+
+#### Education ####
+#### function - education ####
+function_education = function(data_input, timepoint_suffix ='_well0'){
+  
+  var1 = 'core_education_us_level'
+  var2 = 'core_education_nonus_level'
+  var1.time = paste0(var1, timepoint_suffix)
+  var2.time = paste0(var2, timepoint_suffix)
+  
+  DF = data_input
+  DF$edu1<-DF[[var1.time]]
+  DF$edu2<-DF[[var2.time]]
+  
+  #### dv_edu_3cat ####
+  vector= rep(NA, nrow(DF))
+  vector[DF$edu1==1|DF$edu1==2|DF$edu1==3|DF$edu1==4|DF$edu1==5|DF$edu1==6|DF$edu1==7|
+              DF$edu2==1|DF$edu2==2|DF$edu2==3|DF$edu2==4|DF$edu2==5]<-1 #High school and under
+  
+  vector[DF$edu1==8|DF$edu1==9|DF$edu1==10|
+              DF$edu2==6|DF$edu2==7|DF$edu2==8]<-2 #College
+  
+  vector[DF$edu1==11|DF$edu1==12|DF$edu1==13|DF$edu2==9]<-3 #Master's and above
+  
+  vector_fct <- factor(vector,
+                      levels = c(1,2,3))
+                      # labels = c("1, High school and under","2, College","3, Master's and above"))
+  
+  DF$dv_edu_3cat = vector_fct
+  
+  
+  
+  
+  #### dv_edu_4cat ####
+  vector = rep(NA, nrow(DF))
+  vector[DF$edu1%in%c(1,2,3,4,5)|DF$edu2%in%c(1,2,3,4)]<-1 #Primary school and under
+  vector[DF$edu1%in%c(6,7)|DF$edu2%in%5]<-1 #High School/GED or completed Secondary school
+  vector[DF$edu1%in%c(8,9)|DF$edu2%in%c(6,7)]<-2 #Some college, no degree or Associate/Technical/Vocational education
+  vector[DF$edu1%in%10|DF$edu2%in%8]<-3 #Bachelors/university level
+  vector[DF$edu1%in%c(11,12,13)|DF$edu2%in%9]<-4 #Post-Graduate/Professional
+  vector_fct <- factor(vector,
+                   levels = c(1,2,3,4))
+                   #labels = c("1, High school and under",
+                   #           "2, Some college, no degree or Associate/Technical/Vocational education",
+                   #           "3, Bachelors/university level",
+                   #           "4, Post-Graduate/Professional"))
+  DF$dv_edu_4cat = vector_fct
+  
+  
+  #### dv_edu_5cat ####
+  vector = rep(NA, nrow(DF))
+  vector [DF$edu1%in%c(1,2,3,4,5)|DF$edu2%in%c(1,2,3,4)]<-1 #Primary school and under
+  vector [DF$edu1%in%c(6,7)|DF$edu2%in%5]<-2 #High School/GED or completed Secondary school
+  vector [DF$edu1%in%c(8,9)|DF$edu2%in%c(6,7)]<-3 #Some college, no degree or Associate/Technical/Vocational education
+  vector [DF$edu1%in%10|DF$edu2%in%8]<-4 #Bachelors/university level
+  vector [DF$edu1%in%c(11,12,13)|DF$edu2%in%9]<-5 #Post-Graduate/Professional
+  vector_fct  <- factor(vector,
+                       levels = c(1,2,3,4,5))
+                       #labels = c("1, Some high school and under",
+                       #            "2, High School graduate/GED or completed Secondary school",
+                       #            "3, Some college, no degree or Associate/Technical/Vocational education",
+                       #            "4, Bachelors/university level",
+                       #            "5, Post-Graduate/Professional"))
+  
+  DF$dv_edu_5cat = vector_fct
+  
+  #### output
+  df_out = DF %>% select('id','dv_edu_3cat','dv_edu_4cat','dv_edu_5cat')
+  #### Rename the column
+  colnames(df_out)[2:4] = paste0(  colnames(df_out)[2:4], timepoint_suffix)
+  return(df_out)
+}
+
+
+
+#### education - recoding ####
+df = function_education(data_input = DF_US, timepoint_suffix ='')
+X = df$dv_edu_4cat 
+X = as.character(X)
+X = tidyr::replace_na(X, 'Missing')
+X %>% table(useNA = 'always')
+
+X_fct <- factor(X,
+                levels = c('1','2','3','4', 'Missing'),
+                labels = c("1, High school and under",
+                           "2, Some college or Associate/Vocational Education.",
+                           "3, Bachelors/university level",
+                           "4, Post-Graduate/Professional",
+                           "Missing")
+                ) 
+
+X_fct %>% table(useNA = 'always')
+DF_US$edu_new = X_fct
+
+
+#### Income -1  ####
+DF_US$core_income %>% summary()
+
+DF_US$core_income_NEW_3cat =NA
+DF_US$core_income_NEW_3cat  [DF_US$core_income %in% c(0:6)]  = "< 100K"
+DF_US$core_income_NEW_3cat  [DF_US$core_income %in% c(7,8)]  = "100-249K"
+DF_US$core_income_NEW_3cat  [DF_US$core_income %in% c(9,10,11)] = "250K+"
+
+table(DF_US$core_income_NEW_3cat,useNA = 'always')
+DF_US$core_income_NEW_3cat = factor(DF_US$core_income_NEW_3cat, levels= c( "< 100K", "100-249K", "250K+"))
+DF_US$core_income_NEW_3cat = fct_explicit_na(DF_US$core_income_NEW_3cat, na_level = 'Missing')
+DF_US$core_income_NEW_3cat %>% table(useNA = 'always')
+
+
+#### Income -2  ####
+DF_US$core_income %>% summary()
+
+X = rep(NA, nrow(DF_US)) 
+Y = DF_US$core_income 
+
+X[Y %in% c(0:6)]  = "< 100K"
+X[Y %in% c(7,8)]  = "100-249K"
+X[Y %in% c(9)]  = "250-499K"
+X[Y %in% c(10,11)]  = "500+K"
+X %>% table()
+X_fct = factor(X)
+DF_US[['core_income_NEW_4cat']]  = X
+
+
+#### Employment/Job/Occupation ####
+  # 1, Working now 
+  # 2, Temporarily laid off
+  # 3, Sick leave or maternity leave 
+  # 4, Unemployed, looking for work 
+  # 5, Retired 
+  # 6, Disabled 
+  # 7, Home maker 
+  # 8, Student 
+  # 9, Other
+my_var = 'core_work_status'
+table(DF_US[[my_var]], useNA = 'always')
+Y = DF_US[[my_var]]
+X = DF_US[[my_var]]
+X[Y==1] <- "Working now"
+X[Y==2] <- "Temporarily laid off"
+X[Y==3] <- "Sick leave or maternity leave"
+X[Y==4] <- "Unemployed, looking for work"
+X[Y==5] <- "Retired"
+X[Y==6] <- "Disabled"
+X[Y==7] <- "Home maker"
+X[Y==8] <- "Student"
+X[Y==9] <- "Other"
+X_fct = factor(X)
+X_fct = fct_explicit_na(X_fct,na_level = 'Missing')
+X_fct %>% table(useNA='always')
+DF_US$core_work_status_new = X_fct
+```
+
+```{r race - Jerry's checking}
+dim(DF_US)
+
+#### Pure CN and mixed ####
+DF_US %>% filter(core_race___9==1) %>% nrow()
+
+# Pure CN
+DF_US %>% dplyr::filter(
+  core_race___1==0,
+  core_race___2==0,
+  core_race___3==0,
+  core_race___4==0,
+  core_race___5==0,
+  core_race___6==0,
+  core_race___7==0,
+  core_race___8==0,
+  core_race___9==1,
+  core_race___10==0,
+  core_race___11==0,
+  core_race___12==0,
+  core_race___13==0,
+  core_race___14==0,
+  core_race___15==0,
+  core_race___16==0) %>% 
+  nrow()
+
+
+#### Pure CN and mixed ####
+DF_US %>% filter(core_race___15==1) %>% nrow()
+
+# Pure TW
+DF_US %>% dplyr::filter(
+  core_race___1==0,
+  core_race___2==0,
+  core_race___3==0,
+  core_race___4==0,
+  core_race___5==0,
+  core_race___6==0,
+  core_race___7==0,
+  core_race___8==0,
+  core_race___9==0,
+  core_race___10==0,
+  core_race___11==0,
+  core_race___12==0,
+  core_race___13==0,
+  core_race___14==0,
+  core_race___15==1,
+  core_race___16==0) %>% 
+  nrow()
+
+
+#### CN & TW Only ####
+DF_US %>% dplyr::filter(
+  core_race___1==0,
+  core_race___2==0,
+  core_race___3==0,
+  core_race___4==0,
+  core_race___5==0,
+  core_race___6==0,
+  core_race___7==0,
+  core_race___8==0,
+  core_race___9==1,
+  core_race___10==0,
+  core_race___11==0,
+  core_race___12==0,
+  core_race___13==0,
+  core_race___14==0,
+  core_race___15==1,
+  core_race___16==0) %>%  dplyr::select(starts_with("core_race___") )
+
+```
+```{r race - pre-encoding}
+#### Action: Convert the "1" into a representative text
+#### For example: If core_race =1, then I want "1,White" as the value.
+
+#### Why to do so? Race/Ethinicity allows people to check multiple choice at the same time.
+#### Thus, I need to capture "the combination of every races which were selected by a participant"
+
+
+
+#### Step-1: Define my wanted text/label ####
+my_lables = c(
+'1,White',  
+'2,AfricanAmerican', 
+'3,NativeAmerican',   
+'4,NativeAlaska',  
+'5,NativeHawaiian',   
+'6,Guamanian',   
+'7,Samoan',    
+'8,OtherPacificIslander',   
+'9,Chinese',   
+'10,Japanese',   
+'11,Korean',  
+'12,Vietnamese',  
+'13,OtherAsian',   
+'14,OtherRace',
+'15,Taiwanese',   
+'16,SouthAsian'
+) 
+
+
+
+#### Step-2: Create a place holder "df" to store the recorded race/ethnicity
+checkbox_var = paste0('core_race___', c(1:16))
+df = DF_US %>% dplyr::select( c('id', checkbox_var) ) 
+
+for (i in 1:length(checkbox_var) ) {
+  print(i)
+  print(my_lables[i])
+  new_var_name = paste0(checkbox_var[i],'_new')
+  
+  # Create place holder
+  df[[new_var_name]] = rep(NA, nrow(df))
+  df[[new_var_name]][df[[checkbox_var[i]]]==1] <- my_lables[i]
+}
+    #### check - This df has the original core_race[0-16] and recoded core_race[0-16]_new
+    head(df)
+
+    
+#### Step-3: I only need the recoded 'core_race___[0-9]*_new'
+select= colnames(df) %>% grepl(x =., pattern = 'core_race___[0-9]*_new')
+my_col = colnames(df)[select]
+df[, my_col] %>% head()
+    
+#### Great! In the next section, I will combine all the text row by row ####
+```
+
+```{r race - recoding-1}
+#### Race is a check-box variable which allows a person to give multiple responses
+#### That's why we need to check all combination
+
+#### data manipulation 
+string_vector = df %>% 
+  dplyr::select(my_col) %>%
+  apply(X = .,MARGIN = 1,FUN =function(x){ paste(x,collapse = '_')}) %>% # All combination
+  str_replace_all(string =.,pattern = '[0-9]*,|NA', replacement = '')%>%
+  str_replace_all(string =.,pattern = '_+', replacement = ' ')%>%
+  str_replace_all(string =.,pattern = '^ | $', replacement = '')
+
+string_vector [string_vector=='']<-NA
+    #### check ####
+    string_vector %>% table(useNA = 'always')
+
+
+
+#### Assign back to the WELL US master dataset ####
+# Note: I did not remove any rows or change the position, so df and DF_US have the same row.
+# Thus, id or join were not used to merge the data.
+    #### check ####
+    nrow(DF_US)
+    nrow(df)
+
+df$core_race_new = string_vector
+DF_US$core_race_new = string_vector
+
+#### Take care of hispanic #####
+# Note: core_race did not ask Hispanic, but it is core_ethnic asking Hispanic.
+# Thus, [DF_US$core_ethnic ==1] ='Hispanic'  is the only place I can confirm  "Hispanic"
+# Not perfect, but this is what I can do with this survey data. 
+
+DF_US$core_race_new [DF_US$core_ethnic ==1] ='Hispanic'
+DF_US$core_race_new   %>% table(useNA = 'always')
+
+### END of Ethnicity/Race coding ####
+```
+
+```{r race - Jerry's checking for pure and mixed race/ethnicity }
+# pure race -> which has no ' '
+# n= ~ 5600
+select_pure_race = ! grepl(x=df$core_race_new , pattern= ' ')
+sum(select_pure_race)
+df$core_race_new [select_pure_race]  %>% table(useNA = 'always')
+
+# mixed (n=~600)
+select_mixed_race =  grepl(x=df$core_race_new , pattern= ' ')
+sum(select_mixed_race)
+df$core_race_new [select_mixed_race]  %>% table(useNA = 'always')
+```
+
+
+
+#### Check Ethnic groups in Asain race ####
+```{r Ethinicity  in Asian-WRONG}
+DF_US$race_NEW.temp %>% table(useNA = 'always')
+setwd('C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/WELL_Score/Result')
+DF_US %>% count(race_NEW,.drop = FALSE)  %>% write.xlsx('US_race.xlsx')
+
+
+DF_US%>% 
+  filter( race_NEW.temp %in%c (13 ) )%>%    # 13,Other Asian
+  count(core_asian_other)
+
+DF_US%>% 
+  filter( race_NEW.temp %in%c (16 ) )%>%  # 16,South Asian  
+  count(core_asian_other)
+
+#### recoding ####
+X = rep(NA, nrow(DF_US))
+Y1 = DF_US$race_NEW.temp
+Y2 = DF_US$core_asian_other
+
+X[Y1 == 9] <- '9,Chinese'
+X[Y1 == 10] <- '10,Japanese'
+X[Y1 == 11] <- '11,Korean'
+X[Y1 == 12] <- '12,Vietnamese'
+X[Y1 == 15] <- '15,Taiwanese'
+
+#### '13,Other Asian' and '16,South Asian'
+X[Y1 == 13 & (Y2 %in% 'Cambodian')] <- 'Cambodian'
+X[Y1 == 13 & (Y2 %in% 'Taiwanese')] <- '15,Taiwanese'
+
+my_Indian = c('India','indian', 'Indian')
+X[Y1 == 13 & (Y2 %in% my_Indian )] <- 'Indian'
+
+my_Pilipino = c('Filipina','filipino', 'Filipino', 'Filipinx','Fillipino','Filpino','FILPINO', 'Pilipino')
+X[Y1 == 13 & (Y2 %in% my_Pilipino)] <- 'Pilipino/Filipino'
+
+#### clean up - these people say they are lation
+X [DF_US$core_ethnic ==1] = NA
+
+X %>% table()
+
+#### Assign - 1
+DF_US[['Ethinicity_Asian_new']] = X
+df = DF_US %>% count(Ethinicity_Asian_new)
+df
+
+#### Final recoding 
+X = as.character(DF_US$race_NEW)
+Y3 = DF_US$Ethinicity_Asian_new
+
+X [ Y3 == 'Indian'] = 'Indian'
+X [ Y3 == 'Pilipino/Filipino'] = 'Pilipino/Filipino'
+X %>% table()
+
+DF_US[['race_NEW_more_asian']] = X
+
+setwd('C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/WELL_Score/Result')
+DF_US %>% count(race_NEW_more_asian,.drop = FALSE)  %>% write.xlsx('US_race.xlsx')
+```
+
+
+
+
+
+#### Other Covariates #####
+```{r live alone at WELL0}
+#### Live along ####
+var= 'core_pplno_household'
+DF_US[[var]] %>% table(useNA = 'always')
+X=DF_US[[var]] 
+Y=DF_US[[var]] 
+X[Y==1] <- 'Yes'
+X[Y!=1] <- 'No'
+X[is.na(Y)] <- NA
+X_fct = factor(X)
+X_fct %>% table(useNA = 'always')
+DF_US[['core_pplno_household_new']] = X_fct
+```
+
+```{r Mobility}
+my_var = 'core_nature_min'
+table(DF_US[[my_var]], useNA = 'always')
+Y = DF_US[[my_var]]
+X = DF_US[[my_var]]
+X[Y==1] <- '1, Never or Alost never'
+X[Y==2] <- '1, Never or Alost never'
+X[Y==3] <- '2, Sometimes'
+X[Y==4] <- '3, Fairly often'
+X[Y==5] <- '4, Very often'
+X_fct = factor(X)
+X_fct = fct_explicit_na(X_fct, na_level = 'Missing')
+X_fct %>% table(useNA = 'always')
+DF_US$core_nature_min_new = X_fct
+```
+
+```{r Disease: diabetes, hypertension, a morbidity index }
+
+#### Diabetes ####
+  my_var = 'core_diabetes'
+  DF_US[, my_var] %>% table(useNA = 'always')
+  Y = DF_US[[my_var]]
+  X = DF_US[[my_var]]
+  X[Y==0] <- 'No'
+  X[Y==1] <- 'Yes'
+  X[Y==2] <- NA
+  X = tidyr::replace_na(X, 'Missing')
+  X_fct = factor(X, levels = c('No','Yes','Missing'))
+  X_fct %>% table(useNA = 'always')
+  DF_US$core_diabetes_new = X_fct
+
+ 
+#### hypertension ####
+  my_var = 'core_hypertension'
+  DF_US[, my_var] %>% table(useNA = 'always')
+  Y = DF_US[[my_var]]
+  X = DF_US[[my_var]]
+  X[Y==0] <- 'No'
+  X[Y==1] <- 'Yes'
+  X[Y==2] <- NA
+  X = tidyr::replace_na(X, 'Missing')
+  X_fct = factor(X, levels = c('No','Yes','Missing'))
+  X_fct %>% table(useNA = 'always')
+  DF_US$core_hypertension_new = X_fct
+
+  
+#### cancer - History of cancer ####
+  my_var = 'core_cancer'
+  DF_US[, my_var] %>% table(useNA = 'always')
+  Y = DF_US[[my_var]]
+  X = DF_US[[my_var]]
+  X[Y==0] <- 'No'
+  X[Y==1] <- 'Yes'
+  X[Y==2] <- NA
+  X = tidyr::replace_na(X, 'Missing')
+  X_fct = factor(X, levels = c('No','Yes','Missing'))
+  X_fct %>% table(useNA = 'always')
+  DF_US$core_cancer_new = X_fct
+
+
+#### Correction Comorbidity 04/15/2020 ####
+function_comorbidity_index = function(data_input, 
+                                      new_var_name = 'dv_comorbidity_index',
+                                      timepoint_suffix='_well0'){
+  
+  Medical_Var = c(
+    'core_hypertension','core_heartattack','core_heartdisease',
+    'core_stroke','core_cancer','core_diabetes')
+  
+  Medical_Var = paste0(Medical_Var,timepoint_suffix)
+  
+  #### Corrected Comorbidity 04/15/2020 ####
+  #### Convert disease status into numeric ( 1 = Yes,  0= any other values)
+  DF_Dis = data_input %>% select(Medical_Var)
+  DF_Dis [DF_Dis == 0| DF_Dis==2 | is.na(DF_Dis) ] =0
+  
+  #### Sum up to create the comorbidity index
+  DF_Dis[[ new_var_name]] = rowSums(DF_Dis,na.rm = T)
+
+  
+  #### Assign 
+  data_input[[ new_var_name]] = DF_Dis[[ new_var_name]]
+
+  #### Output
+  df_out = data_input %>% select('id',new_var_name )
+  #### Rename
+  colnames(df_out)[2] = paste0(new_var_name, timepoint_suffix)
+  return(df_out)
+}
+
+#### Comorbidity  recoding ####
+  df = function_comorbidity_index(data_input = DF_US,new_var_name = 'comorbidity_index', timepoint_suffix='')
+  df$comorbidity_index %>% table(useNA = 'always')
+  X = df$comorbidity_index 
+  X = cut(X, breaks = c(0,1 ,2, 7), right = F)  
+  X %>%  table(useNA = 'always' )
+  X_fct = factor(X, levels= c('[0,1)','[1,2)','[2,7)'), labels = c('0', '1','2-6'))
+  X_fct = fct_explicit_na(X_fct, na_level = 'Missing')
+  X_fct %>% table(useNA = 'always')
+  DF_US$comorbidity_index_new = X_fct
+```
+
+```{r Mental Condition}
+#### Depression ####
+  my_var = 'core_depression'
+  DF_US[, my_var] %>% table(useNA = 'always')
+  Y = DF_US[[my_var]]
+  X = DF_US[[my_var]]
+  X[Y==0] <- 'No'
+  X[Y==1] <- 'Yes'
+  X[Y==2] <- NA
+  X = tidyr::replace_na(X, 'Missing')
+  X_fct = factor(X, levels = c('No','Yes','Missing'))
+  X_fct %>% table(useNA = 'always')
+  DF_US$core_depression_new = X_fct
+  
+  
+  
+#### general mental health condition
+X = rep(NA, nrow(DF_US))
+Y1 = DF_US$core_depression
+Y2 = DF_US$core_mental_health
+
+X[ Y1 ==0 & Y2==0] <- '1. -- ' # -- None of any mental condition
+X[ Y1 ==0 & Y2==1] <- '2. -+ ' # -+ Other mental health conditions
+X[ Y1 ==1 & Y2==0] <- '3. +- ' # +- Clinical depression
+X[ Y1 ==1 & Y2==1] <- '4. ++ ' # ++ Clinical depression + Other Mental health conditions
+
+
+X_fct = factor(X)
+X_fct %>% table(useNA = 'always')
+DF_US$mental_condition_new = X_fct
+DF_US$mental_condition_new %>% table(useNA = 'always')
+```
+
+```{r Life Style: smoking, drinking, and sleeping}
+#### smoke ####
+function_smoke= function(data_input, 
+                         new_var_name='dv_smoke_current',
+                         timepoint_suffix = '_well0') {
+  library('dplyr')
+  
+  # Function annotations
+  #### data_input must be US dataset
+  #### Two variable are reuqied to derive this variable 
+  #### var.old.1 = 'core_smoke_100'
+  #### var.old.2 = 'core_smoke_freq' 
+  #### derived responses: 0, Never | 1, Former| 2, Current
+
+  dfus = data_input
+  var.old.1 = paste0('core_smoke_100', timepoint_suffix)
+  var.old.2 = paste0('core_smoke_freq', timepoint_suffix)
+  checkpoint = ( c(var.old.1, var.old.1) %in% colnames(dfus) ) %>% sum()
+  if(checkpoint <2){
+    print('core_smoke_100 or core_smoke_freq  does not exist in the selected time point')
+  }
+  
+  #### Ann's version for smoking status in US 
+  vector = rep(NA, nrow(dfus))
+  
+  #### My Old program 
+  #vector<-ifelse(dfus$core_smoke_100 %in%c(0), 0, #Never
+  #                              ifelse(dfus$core_smoke_100%in%1 & dfus$core_smoke_freq%in%1, 1, #Former
+  #                                     ifelse(dfus$core_smoke_freq%in% c(2,3), 2, #Current 
+  #                                            NA)))
+
+  vector<-ifelse(dfus[[var.old.1]] %in%c(0), 0, #Never
+                ifelse(dfus[[var.old.1]]%in%1 & dfus[[var.old.2]] %in%1, 1, #Former
+                       ifelse(dfus[[var.old.2]]%in% c(2,3), 2, #Current 
+                                                            NA)))
+  
+  
+  #### Label
+  # vector_fct = factor(vector, levels=c(0,1,2), labels = c('Never','Former','Current'))
+  vector_fct = factor(vector, levels=c(0,1,2)) # 0, Never | 1, Former| 2, Current
+  dfus[[new_var_name]] = vector_fct
+
+  #### print the table for quick checking
+  print(table(dfus[[new_var_name]], useNA = 'always'))
+  
+  #### output
+  df_out = dfus %>% dplyr::select('id',new_var_name)
+  #### Add time suffix to the new-derived varaible
+  colnames(df_out)[2] = paste0(new_var_name, timepoint_suffix)
+  return(df_out)
+}
+
+#### smoke recoding ####
+  df = function_smoke(data_input = DF_US, timepoint_suffix = '') # note: output is factor! 
+  X = df$dv_smoke_current
+  X_fct = factor(X, levels = c('0','1','2'), labels = c('0, Never', '1, Former','2, Current'))
+  X_fct %>% table(useNA = 'always')
+  X_fct = fct_explicit_na(X_fct, na_level = 'Missing')
+  X_fct %>% table(useNA = 'always')
+  DF_US$smoke_new = X_fct
+  
+#### drinking ####
+function_alcohol = function(data_input, 
+                            new_var_name='dv_alcohol_current', 
+                            timepoint_suffix = '_t0') {
+  
+  # Function annotations
+  #### data_input must be US dataset
+  #### 'core_alcohol_day' is the variable
+  #### Output is a data frame with the derived drinking status
+  #### Derived: 0, Non-drinkers | 1, Current
+  
+  var.old = paste0('core_alcohol_day', timepoint_suffix)
+  
+  dfus = data_input
+  vector = rep(NA, nrow(dfus))
+  vector<-ifelse(dfus[[var.old]] %in%0, 0, # Non-drinkers
+                              ifelse(dfus[[var.old]]%in%c(1:30), 1, #Current
+                                     NA))
+
+  #### label
+  # vector_derived = factor(vector, levels=c(0,1), labels = c('Non-drinkers','Current'))
+  vector_derived = factor(vector, levels=c(0,1)) # 0, Non-drinkers | 1, Current
+  dfus[[new_var_name]] = vector_derived
+  
+  #### print the table for quick checking
+  print(table( dfus[[new_var_name]], useNA = 'always'))
+  
+  #### output
+  df_out = dfus %>% dplyr::select('id', new_var_name )
+  
+  #### Add time suffix to the new-derived varaible
+  colnames(df_out)[2] = paste0(new_var_name, timepoint_suffix)
+  return(df_out)
+}
+  
+#### smoke recoding ####
+  df = function_alcohol(data_input = DF_US, timepoint_suffix = '') # note: output is factor! 
+  X = df$dv_alcohol_current
+  X_fct = factor(X, levels = c('0','1'), labels = c('0, Non-drinkers', '1, Current'))
+  X_fct %>% table(useNA = 'always')
+  X_fct = fct_explicit_na(X_fct, na_level = 'Missing')
+  X_fct %>% table(useNA = 'always')
+  DF_US$drinking_new = X_fct  
+  
+#### sleep ( psqi is not available )####
+  my_var = 'core_sleep_quality'
+  DF_US[, my_var] %>% table(useNA = 'always')
+  Y = DF_US[[my_var]]
+  X = DF_US[[my_var]]
+  X[Y==1] <- '1, Very bad'
+  X[Y==2] <- '2, Fairly bad '
+  X[Y==3] <- '3, Fairly good '
+  X[Y==4] <- '4, Very good'
+  X_fct = factor(X)
+  X_fct = fct_explicit_na(X_fct, na_level = 'Missing')
+  X_fct %>% table(useNA = 'always')
+  DF_US$core_sleep_quality_new = X_fct
+```
+
+```{r Physical Activity}
+# How often did you do something outside for a period of time lasting more than 10 minutes?
+DF_US$core_nature_min %>% table(useNA = 'always')
+
+X=rep(NA, nrow(DF_US))
+Y=DF_US$core_nature_min
+
+X[Y %in% c(1,2)] ='1. Never and Almost never'
+X[Y %in% c(3)]   ='2. Sometimes'
+X[Y %in% c(4)]   ='3. Fairly often'
+X[Y %in% c(5)]   ='4. Very often'
+X %>% table(useNA = 'always')
+X_fct = factor(X)
+DF_US['core_nature_min_new'] = X_fct
+```
+
+
+
+#### country of residence & Zipcode ####
+```{r archive - zipcode preparation}
+# Jerry: Convert 'zip_code_database.csv' into "zip_code_database_JerryCleaned.rds"
+
+# setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/COVID19/Data/")
+# list.files()
+
+# zipcode_US =  read.csv("zip_code_database.csv")
+# zipcode_US$zip = as.character(zipcode_US$zip)
+# 
+# zipcode_US$zip_cleaned = zipcode_US$zip
+# select.1 = nchar(zipcode_US$zip)==3
+# zipcode_US$zip_cleaned [select.1] = paste0('00',zipcode_US$zip [select.1])
+# select.2 = nchar(zipcode_US$zip)==4
+# zipcode_US$zip_cleaned [select.2] = paste0('0',zipcode_US$zip [select.2])
+# 
+# 
+# #### replace
+# zipcode_US$zip = as.character(zipcode_US$zip_cleaned )
+# setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/COVID19/Data/")
+# zipcode_US$zip = as.character(zipcode_US)
+# zipcode_US %>% select(zip, primary_city, state, county, country) %>% 
+
+
+#### Output #####
+# setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/COVID19/Data/")
+# list.files()
+# zipcode_US = readRDS('zip_code_database_JerryCleaned.rds')
+# str(zipcode_US)
+```
+
+```{r merge to US master file}
+####  US zipcode
+setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/COVID19/Data/")
+zipcode_US =  readRDS('zip_code_database_JerryCleaned.rds')
+str(zipcode_US) # This dataset has zip, city, state, county, and country (US only)
+
+#### merge
+DF_US = left_join(x=DF_US , y=zipcode_US , by=c('portal_zip'='zip'))
+
+# Check
+# DF_US %>% select('county') %>% is.na() %>% sum()
+# DF_US %>% filter(is.na(county))  %>% select(portal_zip, county)
+```
+
+
+
+#### WELL score Derivation ####
+```{r}
+#### File Path ####
+setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/David_FactorAnalysis/Code/1_US_CFA/WELL_Score_function/WELL_Score_Function/version_09.23.20/")
+source('0923.function_well_score_US_model7_version2.R')
+
+
+#### Run ####
+# df_version2 = f_score_US_model_7_v2(data.arg = DF_US)
+# summary(df_version2)
+#### Merger ####
+# DF_US = left_join(x=DF_US,y=df_version2, by='id')
+```
+
+
+#### Save the recoded dataset ####
+```{r}
+getwd()
+
+#### Project - WELL CFA ####
+# my_depo = "C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Data/Data_US/Recoded/"
+#setwd(my_depo)
+# DF_US %>% saveRDS("2021_0115_WELL_US_n_6245_recoded.rds")
+
+#### Project - Wearable Device ####
+my_depo = "C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Data/Data_US/Recoded/"
+setwd(my_depo)
+DF_US %>% saveRDS("2020_0226_WELL_US_n_6245_recoded.rds")
+```
+
+
+#### Variables related to NAFLD ####
+
+liver_upper
+liver_anterior
+liver_oblique
+liver_surface
+liver_edge
+liver_parenchyma
+liver_vessel
+liver_envelope
+fatty_liver_b
+fatty_liver
+pic1
+pic2
+liver_data_recovered
+liver_data_missing
+
+
+
