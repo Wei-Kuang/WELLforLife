@@ -2,7 +2,7 @@
 This is  the repo for WELL for Life.
 
 
-#### This is the well score calculation
+#### This is a general well score calculation
 ```
 library('devtools')
 source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/2021_0115.General_Function_well_score.R")
@@ -19,4 +19,14 @@ f_score_well_general(data.arg = DF,
                         item.arg = used_item_name , 
                         fct.arg  = used_fct
                         )
+```
+
+
+#### WELL US score ####
+```
+```
+
+
+#### WELL China score ####
+```
 ```
