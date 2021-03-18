@@ -2,6 +2,7 @@
 This is  the repo for WELL for Life.
 
 
+# WELL score
 #### This is a general well score calculation
 ```
 library('devtools')
@@ -36,3 +37,11 @@ f_score_China_model_7.3_v2(data.arg= DF)
 
 # please check the dictionary(tab-dicty) at https://github.com/Wei-Kuang/WELLforLife/blob/main/CFA_China_Model%207.3_10-12-20.JL.xlsx
 ```
+
+
+# Recoding
+
+#### Recode WELL US
+US_W0_GlobalRecoding_2020_0104.Rmd
+
+#### Recode WELL China
