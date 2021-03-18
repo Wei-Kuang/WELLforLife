@@ -24,9 +24,23 @@ f_score_well_general(data.arg = DF,
 
 #### WELL US score ####
 ```
+f_score_US_model_7_v2(data.arg= DF)
+
+Variable_name	Note
+CFA21items_dom_score_negemo_stress	Domain = Negative Emotion and Stress
+CFA21items_dom_score_posemo	Domain = Positive Emotion
+CFA21items_dom_score_expl_purp	Domain = Exploration and Purpose
+CFA21items_dom_score_fina	Domain = Finance
+CFA21items_dom_score_phyhlt_resili	Domain = Physical Health and Resilience
+CFA21items_dom_score_self	Domain = Sense of Self
+CFA21items_dom_score_social	Domain = Social Connectedness
+CFA21items_well_score	CFA WELL score
+![image](https://user-images.githubusercontent.com/35211701/111592769-75ffd500-8786-11eb-99fc-334b197ebc51.png)
+
 ```
 
 
 #### WELL China score ####
 ```
+f_score_China_model_7.3_v2(data.arg= DF)
 ```
