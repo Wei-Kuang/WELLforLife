@@ -1,0 +1,319 @@
+---
+title: "Ford_Code_v1"
+author: "Jerry"
+date: "May 27, 2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library('lessR')
+library('xlsx')
+library("readxl")
+library('tidyverse')
+library('lazyeval')
+```
+
+
+
+#### Data loading
+```{r China data datalading}
+# install.packages('R.utils')
+library('R.utils') # readWindowsShortcut()
+#https://www.rdocumentation.org/packages/R.utils/versions/2.9.2/topics/readWindowsShortcut
+setwd("C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/Ford_Morbility/Data")
+list.files()
+
+
+#### China
+path  = readWindowsShortcut("WELLChina123_DATA_20200306.csv - Shortcut.lnk")
+dat_China = read.csv(path$pathname, stringsAsFactors = F)
+colnames(dat_China)[1] ='id'
+dim(dat_China)
+```
+
+#### OLD WELL scores ####
+```{r}
+# setwd('C:/Users/WeiKuang/Desktop/Stanford Work/WELL/r_scripts/02_china_well_score_algorithm/Test_rdat/')
+# list.files() 
+# well_score_china = get(load('dat_well_score_cn.Rdata'))
+# well_score_china = well_score_china %>% select('id', matches('_score'))
+# dim(well_score_china)
+# names(well_score_china)
+# 
+# # 9 dom total scores
+# well_score_china=well_score_china %>% mutate(dom_9_total_score =long_score - dom_ls_score)
+# 
+# # merge china well score back to the dataset  
+# dat_China = left_join(x = dat_China, y=well_score_china, by='id')
+# dim(dat_China)
+```
+
+
+#### Helper function
+
+
+```{r helper fun - recoding }
+
+f_recoding = function( keys, values, levels, input_vec){
+  require('hash')
+
+  #### Create the hash tag (dictionary) - mapping keys to  values
+  my_h = hash(keys, values)
+  #### Add another pair(key, value) into this hash tag: if "NA", then return NA 
+  .set(my_h, 'NA', NA)
+  
+  #### Map the input vector to values, according to the hash tag (dictionary)
+  chr_vec = as.character(input_vec)
+  chr_vec[is.na(input_vec)]<-'NA'
+  
+  #### Recoding using hash tag (dictionary)
+  recoded_input_vec = chr_vec %>% 
+    sapply( FUN =function(x){ my_h[[x]] }   ) %>%
+    unlist()
+  
+  #### Adjust the levels of factor 
+  X_fct = factor(recoded_input_vec, levels = levels)
+  
+  #### Output
+  return(X_fct)
+}
+
+
+#### example ####
+key_input    = c(1    ,2    , 3)     # our raw data
+value_input  = c('A.1','B.2','C.3')  # the final value
+levels_input =  value_input [c(3,2,1)]
+X= c(1,2,2,3,3,3,NA,NA,NA,NA)
+
+Y= f_recoding(keys      =key_input,
+              values    =value_input, 
+              levels    =levels_input,
+              input_vec =X) 
+
+#### check ####
+Y %>% levels()
+Y %>% class()
+Y %>% table(useNA = 'always')
+Y %>% table()
+```
+
+
+#### Demographic Variables
+```{r check}
+#### Tier 1
+# age_it
+# gender_it
+# marriage
+# edu
+# occup
+# income
+# core_employment # Free text
+# core_work_hr
+
+#### Tier 2
+# core_kind_work
+# core_work_satisfied
+# core_birth_place
+# core_times_moved
+```
+
+```{r recoding}
+#### age_it ####
+max = max(dat_China$age_it,na.rm = T)
+X = cut(dat_China$age_it,breaks = c(0,50,60, max+1),right = F)
+table(X,useNA = 'always')
+X_fct = factor(X,labels = c("<50" ,"50-59", "60+"))
+table(X_fct, useNA = 'always')
+dat_China$age_new = X_fct
+
+
+#### gender_it #### 
+# 1:male
+# 2:female
+dat_China$gender_it %>% table(useNA ='always')
+k = c(1,2)
+v= c('Male', 'Female')
+X = dat_China$gender_it
+X_fct = f_recoding(keys =k, values =v, levels = v, input_vec = X) 
+table(X_fct, useNA = 'always')
+dat_China$gender_new = X_fct
+
+#### marriage #### 
+dat_China$marriage %>% table(useNA='always')
+k = c(1,2,3,4,5)
+v = c('Single', 'Married or Re-married', 'Divorced or Widowed', 'Married or Re-married', 'Divorced or Widowed')
+l = c('Single', 'Married or Re-married', 'Divorced or Widowed')
+X = dat_China$marriage
+
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X)
+table(X_fct, useNA = 'always')
+dat_China$marriage_new = X_fct 
+
+
+#### edu #### 
+dat_China$edu %>% table(useNA='always')
+k = c(1,2,3,4,5,6)
+v = c('1 Illiteracy', 
+      '2 Elementary school', 
+      '3 Junior high and High school',
+      '3 Junior high and High school', 
+      '4 Associate degree, College, and above', 
+      '4 Associate degree, College, and above')
+l = unique(v)
+
+X = dat_China$edu
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X) 
+table(X_fct, useNA = 'always')
+dat_China$edu_new = X_fct 
+
+
+#### occup #### 
+dat_China$occup %>% table(useNA='always')
+k = c(1,2,3,4,5,6,7,8,9,10,11)
+v = c('Agriculture', 'Labor', 'Administration',
+      'Technician', 'Sales', 'Retirement',
+      'Household' ,'Business', 'Unemployment',
+      'Student', 'Other')
+
+l = v
+X = dat_China$occup
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X)
+table(X_fct, useNA = 'always')
+dat_China$occup_new = X_fct 
+
+#### income #### 
+dat_China$income %>% table(useNA='always')
+k = c(1,2,3,
+      4,5,6)
+
+v = c('<3K', '3-7.5K', '>7.5K',
+      '>7.5K', '>7.5K', '>7.5K')
+l = v[1:3]
+
+X = dat_China$income
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X)
+table(X_fct, useNA = 'always')
+dat_China$income_new = X_fct 
+
+#### core_work_hr #### 
+dat_China$core_work_hr %>% table(useNA='always')
+k = c(1,2,3)
+v = c('<20','20-39','>=40')
+l = v
+X = dat_China$core_work_hr
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X)
+table(X_fct, useNA = 'always')
+dat_China$core_work_hr_new = X_fct 
+
+
+#### core_work_satisfied #### 
+dat_China$core_work_satisfied %>% table(useNA='always')
+k = c(1,2,3,4)
+v = c('Very unsatisfied', 'Unsatisfied', 'Satisfied', 'Very Satisfied')
+l = v
+X = dat_China$core_work_satisfied
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X)
+table(X_fct, useNA = 'always')
+dat_China$core_work_satisfied_new = X_fct 
+
+
+#### action (walk) #### 
+dat_China$action%>% table(useNA='always')
+k = c(1,2,3)
+v = c('No difficulty','Some dificulty',NA)
+l = unique(v)
+X = dat_China$action
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X)
+table(X_fct, useNA = 'always')
+dat_China$action_new = X_fct 
+
+
+
+#### daily activity #### 
+dat_China$dailyactivity%>% table(useNA='always')
+k = c(1,2,3)
+v = c('No difficulty','Some dificulty',NA)
+l = unique(v)
+X = dat_China$dailyactivity
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X)
+table(X_fct, useNA = 'always')
+dat_China$dailyactivity_new = X_fct 
+
+
+#### transportation #### 
+dat_China$core_trainstop%>% table(useNA='always')
+k = c(1,2,3,4)
+v = c('Strongly agree', 
+      'Somewhat agree', 
+      'Disagree',
+      'Disagree')
+l = unique(v)
+X = dat_China$core_trainstop
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X)
+table(X_fct, useNA = 'always')
+dat_China$core_trainstop_new = X_fct
+
+#### nature #### 
+dat_China$core_nature_min%>% table(useNA='always')
+k = c(1,2,3,4,5)
+v = c('Never and Almost never', 
+      'Never and Almost never', 
+      'Sometimes',
+      'Fairly often',
+      'Very often')
+l = unique(v)
+X = dat_China$core_nature_min
+X_fct = f_recoding(keys =k, values =v, levels=l, input_vec = X)
+table(X_fct, useNA = 'always')
+dat_China$core_nature_min_new = X_fct 
+```
+
+
+
+
+
+```{r Enviorment and Transportation}
+my_string = 'core_times_moved|core_trainstop|recrea|shops'
+dat_China %>% select( matches(my_string)) %>% f_count_na()
+
+
+
+#### core_times_moved
+dat_China$core_times_moved %>% table(useNA = 'always')
+
+X = cut(dat_China$core_times_moved,breaks = c(0,1,2,3,100),right = F)
+table(X,useNA = 'always')
+X_fct = factor(X,labels = c("0" ,"1", "2", "3+"))
+table(X_fct)
+dat_China$core_times_moved_new = X_fct
+
+#### core_shops
+dat_China$core_shops %>% table()
+dat_China$core_shops_new = factor(dat_China$core_shops)
+
+#### core_trainstop
+dat_China$core_trainstop %>% table()
+dat_China$core_trainstop_new = factor(dat_China$core_trainstop)
+
+#### core_recreaton
+dat_China$core_recreaton %>% table()
+dat_China$core_recreaton_new = factor(dat_China$core_recreaton)
+
+#### core_nature_min
+var.X = 'core_nature_min'
+dat_China[, var.X] = factor(dat_China[, var.X])
+```
+
+
+
+
+
+#### Ouput the recoded dataset for analysis
+```{r}
+setwd('C:/Users/WeiKuang/Desktop/Stanford Work/WELL/Project/Ford_Morbility/Data/')
+dat_China %>% saveRDS('dat_China_2020_0624.rds')
+```
+
