@@ -3,14 +3,6 @@
 library('tidyverse')
 library('scales')
 
-dataset_name = 'WELLSingaporeData_DATA_2021-02-19_1308.csv'  #9338
-
-setwd("/Users/foxeshen/Job/CFA-Singapore/CFA-Singapore-data")
-DF = read.csv(dataset_name, stringsAsFactors = FALSE)
-
-
-
-
 #### Singapore Well Score  ####
 
 f_score_SG_T3.2avgt2 = function(data.arg){
@@ -143,9 +135,3 @@ f_score_SG_T3.2avgt2 = function(data.arg){
   return(df_fct_score)
   
 }
-
-#### check ####
-f_score_SG_T3.2avgt2(DF)
-
-setwd("/Users/foxeshen/Job/WELL Score Analysis/WELL Score - Singapore/WELL Score.SG.Data")
-saveRDS(f_score_SG_T3.2avgt2(DF), "SG.wellscore.T3.2avgt2.rds")
