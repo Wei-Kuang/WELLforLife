@@ -53,6 +53,19 @@ f_score_China_model_7.3_v2(data.arg= DF)
 ```
 
 
+
+
+#### WELL Singapore score
+```R
+library('devtools')
+source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/210319.SG.wellscore.T3.2avgt2.R")
+
+f_score_SG_T3.2avgt2(data.arg= DF)
+
+```
+
+
+
 ## Recoding
 
 #### WELL US
