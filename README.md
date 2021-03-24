@@ -76,3 +76,7 @@ f_score_SG_T3.2avgt2(data.arg= DF)
 
 #### WELL Taiwan
 *TW_GlobalRecoding_2020_0113.Rmd*
+
+#### WELL Singapore
+*210319.SG.Recode.R*
+
