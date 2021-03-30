@@ -52,7 +52,7 @@ f_score_China_model_7.3_v2(data.arg= DF)
 # please check the dictionary(tab-dicty) at https://github.com/Wei-Kuang/WELLforLife/blob/main/CFA_China_Model%207.3_10-12-20.JL.xlsx
 ```
 
-#### Recalculate the old well score (9 dom)
+#### WELL China Old Well score (9dom) - Recalculate the old well score (9 dom)
 Assume that **DF_Old_Score is the dataframe** which has original 9 domians scores, the **well_9dom_v2** is the re-calcuated old well score with range 0-100. This method is more similar to new CFA, so these two score can be compared.
 ```R
 #### Derive old well score (9dom) by taking sum and then average ####
@@ -76,7 +76,6 @@ library('devtools')
 source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/210319.SG.wellscore.T3.2avgt2.R")
 
 f_score_SG_T3.2avgt2(data.arg= DF)
-
 ```
 
 
