@@ -4,8 +4,8 @@ This is  the repo for WELL for Life.
 
 
 
-## WELL score
-#### This is a general well score calculation
+### WELL score
+
 
 
 #### WELL US score
@@ -61,7 +61,7 @@ f_score_SG_T3.2avgt2(data.arg= DF)
 
 
 
-## Recoding
+### Recoding
 
 #### WELL US
 *US_W0_GlobalRecoding_2020_0104.Rmd*
