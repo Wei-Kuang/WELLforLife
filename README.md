@@ -59,7 +59,13 @@ source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/210319.
 f_score_SG_T3.2avgt2(data.arg= DF)
 ```
 
+#### WELL Thailand score
+```R
+library('devtools')
+source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/210406.TH.wellscore.model6.R")
 
+f_score_Thailand_model_6(data.arg= DF)
+```
 
 ### Recoding
 
