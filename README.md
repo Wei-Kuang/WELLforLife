@@ -20,6 +20,30 @@ f_score_US_model_7_v2(data.arg= DF)
 ```
 
 
+#### WELL US score - short Form
+Please check the dictionary at https://github.com/Wei-Kuang/WELLforLife/blob/main/US.EFACFA_ShortForm_Development_2021_0601.xlsx
+
+Model: This is a model based on EFA and CFA. The mother model has 7 factors and 42 items.
+
+Short form (21 items): We select the **top 3 items** in each factor based item-factor correlation (factor loading)
+
+Super Short form (7 items): We select the **top 1** items in each factor based item-factor correlation (factor loading)
+
+```R
+library('devtools')
+source_url("https://raw.githubusercontent.com/Wei-Kuang/WELLforLife/main/US.EFA.CFA_ShortForm_well_score_function_2021_0601.R.R")
+
+# Full form score (7 factors and 42 items)
+f_score_US_efacfa_7fct_42items(data.arg= DF)
+
+
+# Short form score (7 factors and 21 items)
+f_score_US_efacfa_7fct_21items(data.arg= DF)
+
+
+# Super short form score (7 factors and 7 items)
+f_score_US_efacfa_7fct_7items(data.arg= DF)
+```
 
 
 #### WELL China score
